@@ -2,3 +2,5 @@ pyrofork==2.3.45
 TgCrypto
 aiofiles
 psutil
+apscheduler
+aiofiles

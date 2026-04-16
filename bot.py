@@ -8,6 +8,7 @@ import psutil
 from aiofiles import open as aiopen
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
+from aiofiles import open as aiopen
 
 from config import (
     API_ID, API_HASH, BOT_TOKEN,
@@ -251,6 +252,17 @@ async def shutdown(_, m):
     await app.stop()
     os._exit(0)
 
+@app.on_message(filters.command("update") & filters.user(ADMIN_ID))
+async def update(_, m):
+    await m.reply_text("Updating...")
+
+    try:
+        os.system("git pull")
+        await m.reply_text("✅ Updated. Restarting...")
+        os.execv(sys.executable, ["python"] + sys.argv)
+
+    except Exception as e:
+        await m.reply_text(f"Update failed: {e}")
 
 async def main():
 

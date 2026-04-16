@@ -8,7 +8,6 @@ import psutil
 from aiofiles import open as aiopen
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
-from aiofiles import open as aiopen
 
 from config import (
     API_ID, API_HASH, BOT_TOKEN,
@@ -83,7 +82,8 @@ async def get_media_info(file_path):
     data = json.loads(process.stdout)
 
     duration = float(data.get("format", {}).get("duration", 0))
-    height = None
+    width = 0
+    height = 0
     codec = None
     bit_depth = ""
     audio_languages = set()
@@ -91,10 +91,15 @@ async def get_media_info(file_path):
 
     for stream in data.get("streams", []):
         if stream["codec_type"] == "video":
-            height = stream.get("height")
-
+            w = stream.get("width") or 0
+            h = stream.get("height") or 0
+            
+            if w > width:
+                width = w
+                height = h
+                
             raw = (stream.get("codec_name") or "").lower()
-
+            
             if raw in ["hevc", "h265"]:
                 codec = "x265"
             elif raw in ["h264", "avc"]:
@@ -116,6 +121,7 @@ async def get_media_info(file_path):
 
     return (
         duration,
+        width,
         height,
         codec,
         bit_depth,
@@ -129,16 +135,20 @@ def format_duration(s):
     return f"{s//3600:02}:{(s%3600)//60:02}:{s%60:02}"
 
 
-def get_quality(h):
-    if not h:
+def get_quality(w, h):
+    if not w or not h:
         return None
-    if h >= 1080:
+
+    if w >= 1900:
         return "1080p"
-    if h >= 720:
+    elif w >= 1200:
         return "720p"
-    if h >= 480:
+    elif w >= 850:
         return "480p"
-    return f"{h}p"
+    elif w >= 640:
+        return "360p"
+    else:
+        return "240p"
 
 
 async def process_message(message):
@@ -152,7 +162,7 @@ async def process_message(message):
             await f.write(chunk)
 
     try:
-        duration, height, codec, bit_depth, audio, sub = await get_media_info(temp)
+        duration, width, height, codec, bit_depth, audio, sub = await get_media_info(temp)
         if duration == 0:
             raise Exception()
         file_path = temp
@@ -161,9 +171,9 @@ async def process_message(message):
             os.remove(temp)
 
         file_path = await message.download()
-        duration, height, codec, bit_depth, audio, sub = await get_media_info(file_path)
+        duration, width, height, codec, bit_depth, audio, sub = await get_media_info(file_path)
 
-    quality = get_quality(height)
+    quality = get_quality(width, height)
     video_line = " ".join(filter(None, [quality, codec, bit_depth])) or "Unknown"
 
     caption = CAPTION_TEMPLATE.format(

@@ -395,7 +395,7 @@ async def server(_, m):
 @app.on_message(filters.command("restart") & filters.user(ADMIN_ID))
 async def restart(_, m):
     await m.reply_text("Restarting...")
-    os.execv(sys.executable, ["python"] + sys.argv)
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 @app.on_message(filters.command("shutdown") & filters.user(ADMIN_ID))
@@ -413,7 +413,7 @@ async def update(_, m):
         os.system("git pull")
         os.system("pip install -r requirements.txt --no-cache-dir --upgrade")
         await m.reply_text("✅ Updated. Restarting...")
-        os.execv(sys.executable, ["python"] + sys.argv)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
     except Exception as e:
         await m.reply_text(f"Update failed: {e}")

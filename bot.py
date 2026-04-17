@@ -5,6 +5,7 @@ import os
 import logging
 import sys
 import psutil
+import re
 from aiofiles import open as aiopen
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
@@ -339,8 +340,25 @@ async def worker():
 
         queue.task_done()
 
+def caption_has_media_info(caption: str) -> bool:
+    if not caption:
+        return False
+
+    matches = [
+        bool(re.search(r"🎬", caption)),
+        bool(re.search(r"⏳\s*\d{2}:\d{2}:\d{2}", caption)),
+        bool(re.search(r"🔊", caption)),
+        bool(re.search(r"💬", caption)),
+    ]
+
+    return sum(matches) >= 2
+
 @app.on_message(filters.chat(ALLOWED_CHATS) & filters.channel & (filters.video | filters.document))
 async def channel_handler(_, message):
+
+    if caption_has_media_info(message.caption or ""):
+        return
+
     await queue.put((message, "channel"))
 
 @app.on_message(filters.private & (filters.video | filters.document))

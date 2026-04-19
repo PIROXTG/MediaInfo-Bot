@@ -537,7 +537,19 @@ async def channel_handler(_, message):
     if caption_has_media_info(message.caption or ""):
         return
 
+    original_caption = message.caption or ""
+
     caption, file_path = await process_message(message)
+
+    if not caption or "❌ Could not extract media info" in caption:
+        if original_caption:
+            caption = original_caption
+        else:
+            return
+
+    else:
+        if original_caption:
+            caption = f"{original_caption}\n\n{caption}"
 
     channel_id = message.chat.id
 

@@ -698,9 +698,8 @@ async def update_cmd(_, m):
 
 def _install_deps():
     for binary, pkg in (("ffprobe", "ffmpeg"), ("mediainfo", "mediainfo")):
-        try:
-            subprocess.run([binary, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        except (FileNotFoundError, subprocess.CalledProcessError):
+        r = subprocess.run(["which", binary], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if r.returncode != 0:
             logger.info(f"Installing {pkg}…")
             subprocess.run(["apt", "update", "-y"], stdout=subprocess.DEVNULL)
             subprocess.run(["apt", "install", "-y", pkg], stdout=subprocess.DEVNULL)
